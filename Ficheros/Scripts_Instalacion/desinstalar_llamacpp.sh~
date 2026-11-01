@@ -1,0 +1,20 @@
+#!/bin/bash
+# desinstalar_llamacpp.sh - versión 0 (01/11/26) - SIN PROBAR
+set -e              # si un comando falla, se para el script
+
+LLAMA_DIR_COMP="/root/llama.cpp"
+MANIFEST="$LLAMA_DIR_COMP/build/install_manifest.txt"   # lista de ficheros instalados
+
+# Borrar los ficheros que copió 'cmake --install'
+if [ ! -f "$MANIFEST" ]; then
+    echo "No existe $MANIFEST: no se puede desinstalar automáticamente" >&2
+    exit 1
+fi
+xargs rm -f < "$MANIFEST"
+
+# Borrar las carpetas de CMake que hayan quedado vacías
+rmdir /usr/local/lib64/cmake/llama /usr/local/lib64/cmake/ggml 2>/dev/null || true
+
+# Deshacer el cambio de la lista de librerías
+rm -f /etc/ld.so.conf.d/llama.conf
+ldconfig
