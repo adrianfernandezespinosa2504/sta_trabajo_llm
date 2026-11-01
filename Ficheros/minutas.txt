@@ -1,0 +1,89 @@
+08/10/26: Comprobar viabilidad del trabajo 28:
+- El proyecto NO está abandonado (llama.cpp muy vivo, GPT4All ultima version mayo 2025)
+- MV para pruebas 8GB de RAM, 2 procesadores. La CPU soporta AVX2, requisito para GPT4All y llama.cpp
+- Instalacion de git, cmake, compilador C++, ninja.
+- Los repositorios de ALma traen qt6-qthttpserver, qt6-qtpdf y vulkan-loader-devel, con version Qt 6.6.2, suficiente para compilar GPT4All.
+- Necesario comprobar acceso al servidor desde otro equipo, GPT4All podría escichar solo en localhost. llama.cpp si admite conexiones externas.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+09/10/26: Lectura de documentacion.
+- GPT4All: version 3.10.0, 
+	- compilable desde fuente?, necesita entrono gráfico para su uso(la MV lo tiene, GNOME), pero instalable desde cli
+	- necesita conexion a internet para instalacion de paquetes, existe version sin internet (create-offline)
+- llama.cpp: verison 0.6.0-dev, build 11484, commit 5de733437 (~/llama.cpp/build/bin/llama-server --version) 
+	- build disponible, compilable desde fuente, configurable desde cli
+- Dos servidores y servicios distintos
+- Llevar descargado modelos a la defensa
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+11/10/26
+Reglas aclaradas (instrucciones y FAQ):
+- Internet permitido durante la instalación; en la defensa el servicio debe funcionar sin internet (FAQ 5.30).
+- Se pueden llevar ficheros por USB o accesibles por Internet (FAQ 5.12).
+- Los equipos del laboratorio tienen la misma configuración que mi MV.
+
+GPT4All 3.10.0
+- Instalación con instalador oficial en modo CLI (Qt Installer Framework):
+  ./gpt4all-installer-linux.run --root /opt/gpt4all --accept-licenses --default-answer --confirm-command install gpt4all
+- 1º intento fallido ("Installation aborted"): error en operación CreateDesktopEntry, no podía escribir /root/Desktop/GPT4All.desktop (la carpeta no existe). Con --default-answer el instalador respondió "Cancel" y deshizo la instalación. Solución: crear /root/Desktop
+- Resultado: /opt/gpt4all con bin/chat, maintenancetool, Licenses
+- Configuración guardada en /root/.config/nomic.ai/GPT4All.ini. Activar la API del servidor añade serverChat=true.
+- Probado: editar serverChat con la app cerrada cambia la casilla al abrir (configurable por fichero).
+- Servidor local: escucha solo en 127.0.0.1:4891 (ss -tlnp)
+  	   - serverChat=false: el puerto sigue abierto, pero curl -i http://localhost:4891/v1/models devuelve 401 Unauthorized.
+	   - serverChat=true: devuelve 200 OK y {"data":[],"object":"list"} (aún sin modelos).
+
+Pendiente: respuesta del profesor (vigencia de GPT4All, GPL); descargar 2 modelos y probar petición al servidor; listar modelos soportados.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+31/10/26
+
+- Organización del trabajo en fases (A, B, C, D)
+- llama-server --help ofrece -hf, -m, --host, --port (por defecto 8080), --reasoning [on|off|auto] y --reasoning-budget.
+- Arranque con -hf ggml-org/Qwen3.5-0.8B-GGUF en 127.0.0.1:8080
+- Usar en peticion /v1/models para obtener modelos
+- Con -m (modelo local) y --reasoning off, la respuesta llega en content con stop, sin razonamiento.
+- Velocidades solo con CPU: 9,25, 9,82, 6,55 y 8,38 tokens/seg.
+- El system_fingerprint b11484-5de733437 coincide con el build compilado desde código fuente.
+- Modelo descargado en la caché de Hugging Face de root (/root/.cache/huggingface/hub/models--ggml-org--Qwen3.5-0.8B-GGUF/)
+/opt/gpt4all/lib/ contiene librerías con “cuda” en el nombre, sin probar.
+...
+
+Pendiente: probar llama-server sin red con el modelo local, elegir el 2º modelo, descargar un modelo en GPT4All y comparar velocidades, y analizar el uso de GPU (GPT4All incluye librerías CUDA).
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+1/11/26
+
+01/11/26
+
+- Segundo modelo: bartowski/Llama-3.2-1B-Instruct-GGUF, fichero Q4_0, descargado con curl -L a /root/modelos/. Los dos modelos están ahí.
+- Prueba de llama-server -m con ambos modelos en 127.0.0.1:8080, con eth0 DOWN, con respuestas correctas (stop). Velocidades (solo CPU, 2 hilos): Llama 7,51 tokens/s; Qwen 9,25, 9,82, 6,55 y 8,38 en cuatro ejecuciones.
+- Con --reasoning off, Qwen responde en content (sin reasoning_content). Sin él, con max_tokens bajo, la respuesta queda cortada (length) y content vacío.
+- Consulta con curl desde un usuario sin privilegios (dit), con éxito
+- GPT4All: copiados los dos .gguf a /root/.local/share/nomic.ai/GPT4All/ y GET /v1/models (puerto 4891) devuelve ambos: "Llama 3.2 1B Instruct" y "Qwen3.5-0.8B-Q8_0.gguf". Falta comprobar si responden (sobre todo Qwen).
+- Respuesta del profesor: GPT4All sigue activo; "GPL" era una errata, es GPU.
+- Control de versiones: git en la carpeta de entrega y repositorio privado en GitHub (sta_trabajo_llm), con token personal limitado a ese repositorio.
+
+Instalación de llama.cpp en /usr/local (desde código fuente)
+- Antes: which -a llama-server no encontraba nada y dnf list installed no mostraba paquetes llama/ggml.
+- cmake --install build copia 140 ficheros (lista en build/install_manifest.txt): programas a /usr/local/bin y librerías a /usr/local/lib64.
+- Incidencia: llama-server no arrancaba (no encuentra libllama-server-impl.so) porque Linux no busca librerías en /usr/local/lib64. Solución: echo /usr/local/lib64 > /etc/ld.so.conf.d/llama.conf y ldconfig
+- Comprobado: ls -l /proc/<PID>/exe (como root) apunta a /usr/local/bin/llama-server.
+- Registro de arranque: sin clave de API y CORS abierto a todos los orígenes; n_threads = 2; aviso de que el puerto por defecto cambiará a 9931 en una versión futura
+- Scripts en Ficheros/Scripts_Instalacion: instalar_llamacpp.sh (v5), arrancar_llamacpp.sh (v3), desinstalar_llamacpp.sh (v1). Subidos al repo
+
+Para el día de la entrega:
+  cd ~/defensa-Fernandez_Espinosa_Adrian
+  tar cfvz /root/defensa-Fernandez_Espinosa_Adrian.tar.gz --exclude=.git --exclude=.gitignore --exclude='*~' ./
+  tar tzf /root/defensa-Fernandez_Espinosa_Adrian.tar.gz | head -20  
+
+Pendiente:
+- Probar el ciclo desinstalar -> instalar -> arrancar
+- Probar --reasoning off con Llama.
+- GPT4All: consultar /v1/chat/completions con los dos modelos (time curl) y ver si Qwen3.5 carga; medir con el mismo método que llama.cpp.
+- Comprobar si cmake usó make o ninja (ls build).
+- Analizar el uso de GPU en ambos servicios.
