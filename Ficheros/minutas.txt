@@ -58,8 +58,6 @@ Pendiente: probar llama-server sin red con el modelo local, elegir el 2º modelo
 
 1/11/26
 
-01/11/26
-
 - Segundo modelo: bartowski/Llama-3.2-1B-Instruct-GGUF, fichero Q4_0, descargado con curl -L a /root/modelos/. Los dos modelos están ahí.
 - Prueba de llama-server -m con ambos modelos en 127.0.0.1:8080, con eth0 DOWN, con respuestas correctas (stop). Velocidades (solo CPU, 2 hilos): Llama 7,51 tokens/s; Qwen 9,25, 9,82, 6,55 y 8,38 en cuatro ejecuciones.
 - Con --reasoning off, Qwen responde en content (sin reasoning_content). Sin él, con max_tokens bajo, la respuesta queda cortada (length) y content vacío.
@@ -78,7 +76,7 @@ Instalación de llama.cpp en /usr/local (desde código fuente)
 
 Para el día de la entrega:
   cd ~/defensa-Fernandez_Espinosa_Adrian
-  tar cfvz /root/defensa-Fernandez_Espinosa_Adrian.tar.gz --exclude=.git --exclude=.gitignore --exclude='*~' ./
+  tar cfvz /root/defensa-Fernandez_Espinosa_Adrian.tar.gz --exclude=.git --exclude=.gitignore --exclude='*~' --eclude=README.md ./
   tar tzf /root/defensa-Fernandez_Espinosa_Adrian.tar.gz | head -20  
 
 Pendiente:
@@ -87,3 +85,28 @@ Pendiente:
 - GPT4All: consultar /v1/chat/completions con los dos modelos (time curl) y ver si Qwen3.5 carga; medir con el mismo método que llama.cpp.
 - Comprobar si cmake usó make o ninja (ls build).
 - Analizar el uso de GPU en ambos servicios.
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+05/11/26:
+
+- Copiado el modelo Llama-3.2-1B-Instruct-Q4_0.gguf a /root/.local/share/nomic.ai/GPT4All/.
+- Comprobadas las opciones del maintenancetool de GPT4All y confirmada la versión instalada (3.10.0).
+- Probado correctamente el ciclo desinstalar → instalar → arrancar. La reinstalación tarda bastante debido principalmente a la descarga e instalación de paquetes por red (cmake, ninja-build, etc.).
+- Requisitos del proyecto:
+   - Codigo fuente: instalacion de llama.cpp
+   - Paquetes: instalacion de dependencias (cmake, ninja-build...). Como ultima opcion, se podria barajar la idea de pip install gpt4all, pero es libreria de python, no tendria mucho sentido
+
+- Comenzado el desarrollo de los scripts de GPT4All, utilizando como referencia los de llama.cpp. Se utilizará el instalador oficial .run (ejecutable binario)
+
+Pendiente:
+- Completar y probar los scripts de instalación, desinstalación y arranque de GPT4All.
+- Consultar /v1/chat/completions con ambos modelos y comprobar especialmente si Qwen 3.5 responde correctamente.
+- Medir el rendimiento de GPT4All con el mismo método que llama.cpp.
+- Probar --reasoning off con Llama en llama.cpp.
+- Comprobar si CMake utilizó Make o Ninja.
+- Analizar el uso de GPU en ambos servicios.
+- Incognitas para el futuro: Escenarios==diferentes peticiones?? Cantidad de escenarios por servicio?? peticiones_llama.sh y peticiones_gpt4all.sh???
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
