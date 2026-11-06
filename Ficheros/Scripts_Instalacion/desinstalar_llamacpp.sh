@@ -1,5 +1,5 @@
 #!/bin/bash
-# desinstalar_llamacpp.sh - versión 1 (01/11/26) - SIN PROBAR
+# desinstalar_llamacpp.sh - versión 1 (01/11/26)
 # Deshace lo que hace instalar_llamacpp.sh (no borra el código fuente)
 
 # Variables

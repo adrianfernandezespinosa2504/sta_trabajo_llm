@@ -1,5 +1,5 @@
 #!/bin/bash
-# arrancar_gpt4all.sh - versión 2 (06/11/26) - EN CONSTRUCCIÓN
+# arrancar_gpt4all.sh - versión 2 (06/11/26) 
 # Arranque de GPT4All y su servidor API local (puerto 4891)
 
 # Variables

@@ -1,5 +1,5 @@
 #!/bin/bash
-# instalar_gpt4all.sh - versión 2 (06/11/26) - EN CONSTRUCCIÓN
+# instalar_gpt4all.sh - versión 2 (06/11/26) 
 # Instalación de GPT4All mediante su instalador binario
 
 # Variables
@@ -16,7 +16,7 @@ if [ -x "$INSTALADOR" ]; then                     # si existe el fichero instala
         "$INSTALADOR" --root "$GPT4ALL_DIR_INST" --accept-licenses --accept-messages --confirm-command install gpt4all
 
 	# Comprobamos instalacion correcta
-	if [ $? -eq 0 ] && [ -x "$GPT4ALL_BIN" ]; then then
+	if [ $? -eq 0 ] && [ -x "$GPT4ALL_BIN" ]; then
             echo "GPT4All instalado correctamente"
         else
             echo "Error durante la instalación de GPT4All"

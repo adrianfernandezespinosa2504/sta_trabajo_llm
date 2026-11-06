@@ -111,5 +111,21 @@ Pendiente:
 
 -------------------------------------------------------------------------------------------------------------------------------------------------
 
-cambiar parametros de entradda en arranque_llama.cpp
-mismos directorios para gpt4all??
+- Continuado el desarrollo y revisión de los scripts de instalación, desinstalación y arranque de GPT4All, tomando como referencia los scripts de llama.cpp.
+- Revisado el procedimiento de desinstalación de GPT4All mediante maintenancetool con la opción purge. Se comprueba que permite eliminar la instalación de /opt/gpt4all/ sin borrar el directorio de trabajo donde se guardan los scripts.
+- Revisados los scripts de llama.cpp:
+  	    - Instalación: comprobado el uso de cmake --install build, que instala los ejecutables en /usr/local/bin y las bibliotecas en /usr/local/lib64.
+    - Configuración de bibliotecas: creado /etc/ld.so.conf.d/llama.conf y ejecutado ldconfig para solucionar los problemas de carga de bibliotecas al arrancar llama-server.
+    - Desinstalación: utilizado build/install_manifest.txt para identificar los archivos instalados y eliminarlos. Se conserva el código fuente en /root/llama.cpp.
+
+- No utilizar Ninja si su descarga supone una demora considerable. CMake es suficiente para realizar la compilación.
+- Probados los scripts de instalación, desinstalación y arranque de GPT4All. No tardan mucho, en total, el ciclo completo son 5 mins. 
+
+Pendiente:
+
+- Consultar /v1/chat/completions con ambos modelos y comprobar especialmente si Qwen 3.5 responde correctamente.
+- Medir el rendimiento de GPT4All con el mismo método que llama.cpp.
+- Probar --reasoning off con Llama en llama.cpp.
+- Comprobar si CMake utilizó Make o Ninja.
+- Analizar el uso de GPU en ambos servicios.
+- Incognitas para el futuro: Escenarios==diferentes peticiones?? Cantidad de escenarios por servicio?? peticiones_llama.sh y peticiones_gpt4all.sh???

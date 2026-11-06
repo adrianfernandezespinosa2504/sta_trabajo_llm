@@ -1,5 +1,5 @@
 #!/bin/bash
-# desinstalar_gpt4all.sh - versión 1 (06/11/26) - EN CONSTRUCCIÓN
+# desinstalar_gpt4all.sh - versión 1 (06/11/26) 
 # Desinstalación de GPT4All mediante su herramienta de mantenimiento
 
 # Variables
