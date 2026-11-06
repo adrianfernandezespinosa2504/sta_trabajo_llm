@@ -2,8 +2,10 @@
 # desinstalar_llamacpp.sh - versión 1 (01/11/26) - SIN PROBAR
 # Deshace lo que hace instalar_llamacpp.sh (no borra el código fuente)
 
+# Variables
 MANIFEST="/root/llama.cpp/build/install_manifest.txt"   # lista de ficheros instalados
 
+# Desinstalación
 if [ -f "$MANIFEST" ]; then
     # Borrar los ficheros que copió cmake --install
     while read -r fichero; do               # guarda en 'fichero' la ruta que se quiere borrar

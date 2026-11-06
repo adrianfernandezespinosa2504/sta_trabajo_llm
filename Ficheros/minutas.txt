@@ -110,3 +110,6 @@ Pendiente:
 - Incognitas para el futuro: Escenarios==diferentes peticiones?? Cantidad de escenarios por servicio?? peticiones_llama.sh y peticiones_gpt4all.sh???
 
 -------------------------------------------------------------------------------------------------------------------------------------------------
+
+cambiar parametros de entradda en arranque_llama.cpp
+mismos directorios para gpt4all??

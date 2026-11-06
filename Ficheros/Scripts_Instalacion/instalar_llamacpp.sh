@@ -1,10 +1,13 @@
 #!/bin/bash
 # instalar_llamacpp.sh - versión 5 (01/11/26) - EN CONSTRUCCIÓN
+# Instalación de llama.cpp mediante codigo fuente
+# Instalación de dependencias mediante paquetes
 
 # Variables
 LLAMA_DIR_COMP="/root/llama.cpp"               # código fuente y compilación
 COMMIT="5de733437"                             # versión compilada y probada
 
+# Instalación
 # Dependencias (paquetes)
 dnf install -y git cmake gcc-c++ ninja-build   # instalación de dependencias desde paquetes
 
