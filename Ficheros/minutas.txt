@@ -111,6 +111,8 @@ Pendiente:
 
 -------------------------------------------------------------------------------------------------------------------------------------------------
 
+06/11/26
+
 - Continuado el desarrollo y revisión de los scripts de instalación, desinstalación y arranque de GPT4All, tomando como referencia los scripts de llama.cpp.
 - Revisado el procedimiento de desinstalación de GPT4All mediante maintenancetool con la opción purge. Se comprueba que permite eliminar la instalación de /opt/gpt4all/ sin borrar el directorio de trabajo donde se guardan los scripts.
 - Revisados los scripts de llama.cpp:
@@ -128,4 +130,29 @@ Pendiente:
 - Probar --reasoning off con Llama en llama.cpp.
 - Comprobar si CMake utilizó Make o Ninja.
 - Analizar el uso de GPU en ambos servicios.
+- probar a desactivar en cmake la compilación de test y ejemplos para llama.cpp
 - Incognitas para el futuro: Escenarios==diferentes peticiones?? Cantidad de escenarios por servicio?? peticiones_llama.sh y peticiones_gpt4all.sh???
+- Desinstalacion mediante paquetes??
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+07/11/26
+
+- Pruebas de peticiones con eth0 down: llama funcionan los dos modelos, gpt4all solo funciona Llama3.2, Qwen3.5 no lo soporta
+- GPT4All está muerto: no han habido actualizaciones en dos años:
+  	  https://github.com/nomic-ai/gpt4all/issues/3690
+	  https://github.com/nomic-ai/gpt4all/issues/3657
+- Qwen3.5-0.8B-Q8_0 está unsupported. Aun asi, intentare usar un modelo que si lo soporte el servicio:
+  	  - Phi-3 Mini Instruct
+	  - Mistral Instruct
+- wget https://gpt4all.io/models/gguf/Phi-3-mini-4k-instruct.Q4_0.gguf para descargar los modelos
+- Phi-3 copiado en carpeta Modelos
+- comprobar que se puede cambiar el directorio donde se guardan los modelos mediante fichero de configuracion.
+  	    Ahora mismo se guardan en  /root/.local/share/nomic.ai/GPT4All/
+	    Yo los quiero guardar en /root/defensa-Fernandez_Espinosa_Adrian/Modelos/
+- Phi-3 funciona con ambos servicios:
+  	  llama.cpp: >> curl -X POST http://127.0.0.1:8080/v1/chat/completions     -H "Content-Type: application/json"     -d '{"messages":[{"role":"user","content":"Responde solo: hola"}],"max_tokens":30}'
+	  gpt4all: >> curl -X POST http://127.0.0.1:4891/v1/chat/completions -H "Content-Type: application/json" -d '{"messages":[{"role":"user","content":"Responde solo: hola"}],"model":"Phi-3 Mini Instruct","max_tokens":30}'
+- Llama3.2 funciona con ambos servicios
+
+- wget https://gpt4all.io/models/gguf/mistral-7b-instruct-v0.1.Q4_0.gguf (desde dir /Modelos)
