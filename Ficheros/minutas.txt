@@ -156,3 +156,7 @@ Pendiente:
 - Llama3.2 funciona con ambos servicios
 
 - wget https://gpt4all.io/models/gguf/mistral-7b-instruct-v0.1.Q4_0.gguf (desde dir /Modelos)
+
+- añadimos descarga del instalador a instalar_gpt4all.sh
+- en almalinux de los labs vienen por defecto los paquetes git y gcc-c++
+

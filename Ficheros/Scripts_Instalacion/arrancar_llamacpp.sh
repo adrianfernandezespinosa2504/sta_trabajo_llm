@@ -1,5 +1,5 @@
 #!/bin/bash
-# arrancar_llamacpp.sh - versión 5 (06/11/26)
+# arrancar_llamacpp.sh - versión 7 (08/11/26)
 # Uso: ./arrancar_llamacpp.sh <id_modelo> 
 
 # Variables
@@ -11,8 +11,8 @@ LOG="$DIR_LOG/llamacpp.log"
 HOST="127.0.0.1"
 PUERTO="8080"
 
-MODELO_GGUF_1="$DIR_MODELOS/Qwen3.5-0.8B-Q8_0.gguf"
-#MODELO_GGUF_2="$DIR_MODELOS/Llama-3.2-1B-Instruct-Q4_0.gguf" modelo no soportado por GPT4All
+#MODELO_GGUF_1="$DIR_MODELOS/Qwen3.5-0.8B-Q8_0.gguf" modelo no soportado por GPT4All
+MODELO_GGUF_1="$DIR_MODELOS/Llama-3.2-1B-Instruct-Q4_0.gguf" 
 MODELO_GGUF_2="$DIR_MODELOS/Phi-3-mini-4k-instruct.Q4_0.gguf"
 MODELO_GGUF_3="$DIR_MODELOS/mistral-7b-instruct-v0.1.Q4_0.gguf"
 
