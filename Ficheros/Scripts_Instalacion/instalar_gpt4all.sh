@@ -1,49 +1,68 @@
 #!/bin/bash
-# instalar_gpt4all.sh - versión 4 (08/11/26) 
-# Instalación de GPT4All mediante su instalador binario
+# instalar_gpt4all.sh - versión 5 (14/11/26) 
+# Instalación de GPT4All mediante código fuente
 
 # Variables
-INSTALADOR="/root/gpt4all-installer-linux.run"    # instalador oficial
-URL_INSTALADOR="https://gpt4all.io/installers/gpt4all-installer-linux.run"
-GPT4ALL_DIR_INST="/opt/gpt4all"
-GPT4ALL_BIN="$GPT4ALL_DIR_INST/bin/chat"               # ejecutable de GPT4All
+GPT4ALL_DIR="/root/gpt4all"
+QT_PRIVATE="/tmp/qt-private.cmake"
+COMMIT="b666d16"
 
-# Descarga del instalador 
-if [ ! -f "$INSTALADOR" ]; then                   # solo si no existe todavía
-    echo "Descargando el instalador de GPT4All..."
-    if ! wget --output-document="$INSTALADOR" "$URL_INSTALADOR"; then
-        rm -f "$INSTALADOR"                       # borra la descarga incompleta
-        echo "Error al descargar el instalador desde $URL_INSTALADOR"
-    else
-	chmod +x "$INSTALADOR"                            # permiso de ejecución	
+# Activación del compilador
+if source /opt/rh/gcc-toolset-15/enable; then
+
+    # Obtención del código fuente
+    if [ ! -d "$GPT4ALL_DIR/.git" ]; then
+        if git clone --recurse-submodules https://github.com/nomic-ai/gpt4all.git "$GPT4ALL_DIR"; then
+            echo "Repositorio de GPT4All descargado correctamente"
+        else
+            echo "Error al descargar el repositorio de GPT4All"
+        fi
     fi
-else
-    chmod +x "$INSTALADOR"                            # permiso de ejecución
-fi
 
+    # Acceso al repositorio
+    if [ -d "$GPT4ALL_DIR/.git" ]; then
+        if cd "$GPT4ALL_DIR"; then
 
-# Instalación
-if  mkdir -p /root/Desktop; then
-    if [ -x "$INSTALADOR" ]; then                     # si existe el fichero instalador con permisos
-	if [ ! -x "$GPT4ALL_BIN" ]; then              # si la aplicacion no está instalada todavía
-	    # - aceptamos licencias durante instalacion
-	    # - aceptamos mensajes que solicite el instalador
-	    # - confirmamos ejecución de la operacion
-            "$INSTALADOR" --root "$GPT4ALL_DIR_INST" --accept-licenses --accept-messages --confirm-command install gpt4all
-	    
-	    # Comprobamos instalacion correcta
-	    if [ $? -eq 0 ] && [ -x "$GPT4ALL_BIN" ]; then
-		echo "GPT4All instalado correctamente"
+            # Selección de la versión utilizada
+            if git checkout "$COMMIT" && git submodule update --init --recursive; then
+
+                # Configuración de la dependencia Qt6::GuiPrivate
+                if echo 'find_package(Qt6GuiPrivate CONFIG REQUIRED)' > "$QT_PRIVATE"; then
+
+                    # Configuración del proyecto
+                    if cmake -S gpt4all-chat -B build \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DLLMODEL_CUDA=OFF \
+                        -DLLMODEL_KOMPUTE=OFF \
+                        -DCMAKE_PROJECT_QXlsx_INCLUDE="$QT_PRIVATE"; then
+
+                        # Compilación
+                        if cmake --build build --parallel 2; then
+
+                            # Comprobación de la instalación
+                            if [ -x "$GPT4ALL_DIR/build/bin/chat" ]; then
+                                echo "GPT4All instalado correctamente"
+                            else
+                                echo "Error: no se encuentra el ejecutable chat"
+                            fi
+                        else
+                            echo "Error durante la compilación de GPT4All"
+                        fi
+                    else
+                        echo "Error durante la configuración de GPT4All"
+                    fi
+                else
+                    echo "Error al crear el fichero auxiliar de CMake"
+                fi
             else
-		echo "Error durante la instalación de GPT4All"
+                echo "Error al seleccionar la versión de GPT4All"
             fi
-	    
-	else
-            echo "GPT4All ya está instalado"
-	fi
+        else
+            echo "Error al acceder al repositorio de GPT4All"
+        fi
     else
-	echo "No existe el instalador: $INSTALADOR (revisar permisos de ejecución)"
+        echo "No existe un repositorio válido de GPT4All"
     fi
 else
-    echo "No se pudo crear /root/Desktop"
+    echo "Error al activar GCC Toolset 15"
 fi

@@ -160,3 +160,139 @@ Pendiente:
 - añadimos descarga del instalador a instalar_gpt4all.sh
 - en almalinux de los labs vienen por defecto los paquetes git y gcc-c++
 
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+14/11/26:
+
+Consultas al profesor:
+- gpt4all No esta abandonado solamente es que hay proyectos que paran durante varios años y luego se retoman pero que en un año no se puede considerar abandonado si encima funciona bien
+- Lo ideal sería que ambos servicios se instalasen / utilizasen código fuente y paquetes, si no, uno en cada, si no, algún paquete necesario, pero hay que intentar las otras opciones primero 100%. En el caso de gpt4all que su backend es llamacpp, pues esa parte que ya se ha instalado no hace falta, se incorpora la nueva parte solamente (hay que ver si eso es posible)
+
+- En desinstalar_llamacpp.sh, convendría comprobar que cada fichero del manifiesto existe antes de borrarlo y revisar si las carpetas están vacías
+
+
+COSAS NUEVAS
+- Vamos a intentar instalar GPT4All desde codigo fuente
+GPT4All:	   	 Compilar desde su repositorio oficial
+Backend de GPT4All:	 Compilar junto con sus dependencias, incluido su submódulo de llama.cpp (commit 11f734c3b0334dbae4823b4a7467764e447fc6d6)
+llama.cpp independiente: Mantener tu compilación actual
+Dependencias comunes:	 Instalar mediante dnf siempre que sea posible
+
+
+Comprobaciones realizadas:
+
+- Clonado del repositorio oficial de GPT4All en /root/gpt4all.
+- Inspección del fichero .gitmodules para identificar los submódulos y dependencias del proyecto.
+- Inicialización y descarga de los submódulos mediante git submodule update --init --recursive.
+- Comprobación de que el backend de GPT4All incorpora su propia versión de llama.cpp en gpt4all-backend/deps/llama.cpp-mainline. Por tanto, esta versión se compilará dentro del proyecto y no se utilizará directamente la instalación independiente de llama.cpp.
+- Inspección de los ficheros CMakeLists.txt para identificar los requisitos de compilación. Se comprueba que la aplicación gráfica requiere Qt 6.8 o superior.
+- Comprobación de las versiones instaladas de CMake, Ninja y GCC.
+- Comprobación de que el GCC 11.5 instalado inicialmente no proporciona todas las características de C++23 requeridas por el proyecto, concretamente las operaciones monádicas de std::optional.
+
+
+Comprobación de disponibilidad de dependencias mediante dnf:
+
+- Se comprueba que existen paquetes gcc-toolset para las versiones 12, 13, 14 y 15. En particular, están disponibles GCC 13.3.1 y GCC 14.2.1, que permitirán probar un compilador más reciente sin sustituir el GCC del sistema.
+- Se comprueba que los paquetes de desarrollo de Qt 6.10.3 están disponibles en EPEL, incluidos qt6-qtbase-devel, qt6-qtdeclarative-devel, qt6-qthttpserver-devel, qt6-qtsvg-devel y qt6-qttools-devel.
+- Estas versiones cumplen el requisito mínimo de Qt 6.8 indicado por el proyecto.
+
+Instalación de un compilador más reciente:
+- Se comprueba la disponibilidad de GCC Toolset 14 en los repositorios de AlmaLinux.
+
+- Se instala GCC y G++ 14.2.1 mediante dnf, junto con sus dependencias, incluyendo gcc-toolset-14-libstdc++-devel.
+- La instalación se realiza mediante paquetes y permite disponer de un compilador más reciente sin sustituir el GCC original del sistema.
+- Queda pendiente activar el entorno de GCC 14 y repetir las pruebas de compatibilidad con C++23 y las operaciones de std::optional requeridas por GPT4All.
+
+
+Comprobación del soporte de C++23:
+
+- Se activa el entorno GCC Toolset 14 mediante scl enable gcc-toolset-14 bash.
+- Se comprueba que se está utilizando GCC/G++ 14.2.1, instalado en /opt/rh/gcc-toolset-14/.
+- Se repite la prueba de compatibilidad con C++23 que anteriormente fallaba con GCC 11.5.0. El resultado es satisfactorio.
+- Se realiza una segunda prueba para comprobar el funcionamiento de std::optional::and_then(), una operación de C++23 requerida por el proyecto. La compilación también finaliza correctamente.
+- Se confirma que el nuevo compilador y su biblioteca estándar cumplen los requisitos comprobados, sin necesidad de sustituir el compilador original del sistema.
+
+
+Comprobación de las dependencias Qt:
+
+- Se comprueba que los paquetes de desarrollo de Qt 6.10.3 están disponibles en el repositorio EPEL.
+- Se identifica que `QuickDialogs2`, aunque no dispone de un paquete independiente, está incluido en `qt6-qtdeclarative-devel`. Esta comprobación se realiza mediante `dnf provides`.
+- Se identifica también el paquete `qt6-qtpdf-devel`, necesario para el componente PDF utilizado por la aplicación.
+- Se confirma que están disponibles los paquetes correspondientes a los módulos Qt requeridos por el proyecto, todos ellos en la versión 6.10.3.
+
+
+Resolución de incompatibilidades con Veyon e instalación de dependencias:
+
+- Se detectan incompatibilidades entre Veyon 4.8.3.0 y los paquetes Qt 6.6.2 disponibles inicialmente.
+- Se desinstala Veyon junto con las dependencias Qt 6.6.2 que provocaban los conflictos.
+- Se instalan los paquetes de desarrollo de Qt 6.10.3 desde EPEL mediante DNF.
+- Durante la instalación se incorporan GCC Toolset 15 y Clang 21 como dependencias adicionales.
+- Se selecciona GCC Toolset 15 como compilador para la compilación de GPT4All.
+
+Análisis del funcionamiento del servidor HTTP integrado en GPT4All:
+
+- Se examina `gpt4all-chat/src/server.cpp` y se localiza el método `Server::start()`, responsable de iniciar el servidor HTTP.
+- Se comprueba que el servidor escucha en la dirección local (`QHostAddress::LocalHost`) y utiliza el puerto configurado en `MySettings::networkPort()`, cuyo valor predeterminado es 4891.
+- Se comprueba que la opción `serverChat` no condiciona la apertura del puerto, pero sí la autorización de las peticiones a las rutas de la API, que devuelven `401 Unauthorized` cuando está desactivada.
+- Se analiza la creación del objeto servidor mediante `ChatListModel::addServerChat()`, que instancia un objeto `Chat` especial asociado a la clase `Server`.
+- Se identifica que dicho objeto se crea al finalizar la restauración de las conversaciones, mediante `chatsRestoredFinished()`.
+- Se sigue el flujo de inicialización hasta `ChatDrawer.qml`, donde se invoca `ChatListModel.loadChats()` al completar la carga del componente.
+- Se comprueba que `ChatDrawer` está incluido en `ChatView.qml` y que `main.cpp` registra `ChatListModel` como singleton de QML y carga la interfaz principal.
+- Se concluye que el servidor HTTP original está integrado en la aplicación gráfica y que su inicialización depende del flujo de carga de los componentes QML.
+
+
+Configuración y compilación de GPT4All desde código fuente:
+
+- Se mantiene como objetivo compilar la aplicación original de GPT4All, incluyendo su servidor HTTP integrado, sin desarrollar ni sustituir dicho servidor.
+- Se configura el proyecto mediante CMake en modo `Release`, desactivando las opciones CUDA y Kompute para realizar una compilación con CPU.
+- Se detecta un problema de configuración relacionado con la dependencia QXlsx, que utiliza `Qt6::GuiPrivate` sin que se haya cargado previamente el componente correspondiente.
+- Se resuelve el problema mediante un fichero auxiliar de CMake que incorpora `Qt6GuiPrivate`, utilizando la opción `CMAKE_PROJECT_QXlsx_INCLUDE`, sin modificar los archivos originales del repositorio.
+- Se completa correctamente la compilación mediante `cmake --build build --parallel 2`, obteniendo el ejecutable `build/bin/chat` y las bibliotecas necesarias.
+- Se instala la dependencia `qt6-qt5compat`, necesaria para cargar el módulo QML `Qt5Compat.GraphicalEffects`.
+- Se comprueba que la aplicación compilada arranca correctamente.
+- Durante el arranque se observan advertencias relacionadas con la ausencia de los backends CUDA y Kompute, así como limitaciones del backend TLS de Qt. Estas advertencias no impiden el arranque de la aplicación ni el funcionamiento de la API local.
+
+
+Configuración y verificación del servidor HTTP:
+
+- Se examina el fichero de configuración `/root/.config/nomic.ai/GPT4All.ini` y se identifican las opciones `serverChat` y `networkPort`.
+- Se habilita el acceso a la API mediante `serverChat=true` y se establece el puerto 4891 mediante `networkPort=4891`, modificando directamente el fichero INI sin utilizar la interfaz gráfica.
+- Se comprueba que el servidor HTTP escucha en `127.0.0.1:4891`.
+- Se verifica inicialmente que las peticiones a la API devuelven `401 Unauthorized` cuando el acceso está deshabilitado.
+- Tras habilitarlo, se obtiene una respuesta correcta del endpoint `/v1/models`, confirmando el acceso a la API.
+
+
+Configuración del directorio de modelos y pruebas de generación:
+
+- Se examina el funcionamiento de los métodos `modelPath()` y `setModelPath()` de `mysettings.cpp` para determinar cómo se configura el directorio de modelos.
+- Se establece mediante el fichero INI el directorio `/root/defensa-Fernandez_Espinosa_Adrian/Modelos/`, reutilizando los modelos GGUF descargados previamente.
+- Se comprueba mediante el endpoint `/v1/models` que GPT4All detecta los cuatro modelos disponibles: Llama 3.2 1B Instruct, Mistral Instruct, Phi-3 Mini Instruct y Qwen3.5-0.8B-Q8_0.gguf.
+- Se realiza una primera petición al endpoint `/v1/chat/completions` utilizando Phi-3 Mini Instruct y se obtiene una respuesta generada correctamente.
+- Se repite la prueba aumentando el parámetro `max_tokens` y se obtiene la respuesta esperada, con finalización normal de la generación (`finish_reason: stop`).
+- Se confirma el funcionamiento de la aplicación compilada desde código fuente, su servidor HTTP integrado, la detección de modelos locales y la generación de respuestas mediante la API.
+
+
+Finalización y verificación de los scripts de administración de GPT4All:
+
+- Se modifica el script `instalar_gpt4all.sh` para realizar la instalación mediante código fuente, sustituyendo el procedimiento anterior basado en el ejecutable `.run`.
+- Se configura el script para clonar el repositorio de GPT4All junto con sus submódulos, seleccionar la versión utilizada (`b666d16`) y compilar la aplicación mediante CMake.
+- Se incorporan al procedimiento las particularidades necesarias para la compilación en AlmaLinux, incluyendo la activación de GCC Toolset 15 y la resolución de una dependencia de Qt relacionada con `Qt6::GuiPrivate`.
+- Se ejecuta el script tras eliminar la instalación anterior y se comprueba que realiza correctamente la descarga del código fuente, la configuración y la compilación del proyecto, generando el ejecutable `build/bin/chat`.
+
+
+Finalización y verificación de los scripts de configuración y arranque de GPT4All:
+
+- Se completa el script `configurar_gpt4all.sh` para habilitar el servidor HTTP, establecer el puerto 4891 y configurar el directorio de modelos mediante el fichero `GPT4All.ini`.
+- Se completa el script `arrancar_gpt4all.sh` para iniciar la aplicación compilada desde código fuente y redirigir su salida a `/var/log/sta_trabajo/gpt4all.log`.
+- Se ejecuta el script de arranque y se comprueba que GPT4All inicia correctamente y que su API responde a través del endpoint `/v1/models`.
+- Se realiza una petición al endpoint `/v1/chat/completions` utilizando Phi-3 Mini Instruct y se obtiene una respuesta correcta, confirmando el funcionamiento del servidor tras la instalación automatizada.
+
+
+14/11/26: Verificación de la desinstalación y reinstalación de GPT4All:
+
+- Se completa el script `desinstalar_gpt4all.sh` para eliminar el repositorio y los ficheros compilados de GPT4All, comprobando previamente que la aplicación no esté en ejecución.
+- Se ejecuta el script y se verifica que elimina correctamente la instalación realizada desde código fuente.
+- Se mantienen los ficheros de configuración, los modelos descargados y las dependencias del sistema, al no formar parte de los ficheros propios de la instalación que se pretende eliminar.
+- Se vuelve a ejecutar `instalar_gpt4all.sh` y se comprueba que GPT4All puede instalarse nuevamente desde cero mediante el procedimiento automatizado.
